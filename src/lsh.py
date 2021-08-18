@@ -75,5 +75,14 @@ class LSHashMap:
         df = pd.DataFrame({"idx": np.arange(len(hashes)), "hashes": hashes})
         self._bins = df.groupby("hashes").apply(lambda x: list(x["idx"])).to_dict()
 
-    def __get_item__(self, key: int) -> List[int]:
+    def __getitem__(self, key: int) -> List[int]:
         return self._bins[key]
+
+    def items(self):
+        return self._bins.items()
+
+    def keys(self):
+        return self._bins.keys()
+
+    def values(self):
+        return self._bins.values()
