@@ -60,3 +60,20 @@ class RSPHash:
     def batch_hash(self, vs: np.array) -> np.array:
         """Hash a set of vectors and return an array of uint hashes"""
         return np.vectorize(lambda x: self.hash(x), signature="(n)->()")(vs)
+
+
+class LSHashMap:
+    _rsp: RSPHash
+    _bins: Dict[int, List[int]]
+
+    def __init__(self, dim: int, width: int):
+        self._rsp = RSPHash(dim=dim, width=width)
+        self._bins = {}
+
+    def build(self, vs: np.array) -> None:
+        hashes = self._rsp.batch_hash(vs)
+        df = pd.DataFrame({"idx": np.arange(len(hashes)), "hashes": hashes})
+        self._bins = df.groupby("hashes").apply(lambda x: list(x["idx"])).to_dict()
+
+    def __get_item__(self, key: int) -> List[int]:
+        return self._bins[key]
