@@ -54,5 +54,9 @@ class RSPHash:
             raise ValueError()
 
     def hash(self, v: np.array) -> int:
-        res = np.vectorize(lambda x: x.hash(v))(self._hashers)
+        res = np.vectorize(lambda x: x.hash(v))(self._hashers) > 0
         return array_to_int(res)
+
+    def batch_hash(self, vs: np.array) -> np.array:
+        """Hash a set of vectors and return an array of uint hashes"""
+        return np.vectorize(lambda x: self.hash(x), signature="(n)->()")(vs)
