@@ -9,7 +9,7 @@ def bloom(s: pd.Series, m: int, k: int = 0) -> np.array:
 
     if k == 0:
 
-        k = int(m / n * math.log(2))
+        k = int(math.ceil(m / n * math.log(2)))
         print(f"No k received, optimal k set to {k}")
 
     bc = np.zeros((k, m), dtype=int)
