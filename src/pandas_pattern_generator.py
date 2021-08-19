@@ -3,9 +3,9 @@ import numpy as np
 
 class PandasPatternGenerator():
     def __init__(self,n,k,hll_bits):
-        self.n = n
-        self.k = k
-        self.hll_bits = hll_bits
+        self.n = n # number of rows in dataset
+        self.k = k # number of pattners created
+        self.hll_bits = hll_bits # hll vectors will have 2**hll_bits many dimensions
         self.pattern_index = range(1,self.k+1)
         self.patterns = {i: self.generate_pattern(n,i) for i in self.pattern_index}
         self.overlaps = pd.DataFrame(
@@ -26,6 +26,7 @@ class PandasPatternGenerator():
         return len(pat_1.to_frame().merge(pat_2.to_frame(),on=0))
 
     def compute_first_bit(self,a):
+        # shamelessly coppied from: https://github.com/dask/dask/blob/main/dask/dataframe/hyperloglog.py
         "Compute the position of the first nonzero bit for each int in an array."
         # TODO: consider making this less memory-hungry
         bits = np.bitwise_and.outer(a, 1 << np.arange(32))
@@ -33,6 +34,7 @@ class PandasPatternGenerator():
         return 33 - bits.sum(axis=1)
 
     def compute_hll_array(self, obj, b):
+        # shamelessly coppied from: https://github.com/dask/dask/blob/main/dask/dataframe/hyperloglog.py
         # b is the number of bits
 
         if not 8 <= b <= 16:
