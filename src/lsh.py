@@ -44,12 +44,16 @@ class RSPHash:
     _hashers: List[RSP]
 
     def __init__(
-        self, dim: int = None, width: int = None, rsps: List[RSP] = None
+        self,
+        dim: int = None,
+        width: int = None,
+        rsps: List[RSP] = None,
+        seed: int = None,
     ) -> None:
         if rsps:
             self._hashers = np.array(rsps)
         elif dim and width:
-            self._hashers = np.array([RSP(dim) for _ in range(width)])
+            self._hashers = np.array([RSP(dim, seed=seed) for _ in range(width)])
         else:
             raise ValueError()
 
@@ -66,9 +70,9 @@ class LSHashMap:
     _rsp: RSPHash
     bins: Dict[int, List[int]]
 
-    def __init__(self, vects: np.array, width: int = 16):
+    def __init__(self, vects: np.array, width: int = 16, seed: int = None):
         dim = vects.shape[1]
-        self._rsp = RSPHash(dim=dim, width=width)
+        self._rsp = RSPHash(dim=dim, width=width, seed=seed)
         self.vects = vects
 
         hashes = self._rsp.batch_hash(self.vects)
