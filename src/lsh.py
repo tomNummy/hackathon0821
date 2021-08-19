@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from typing import Any, Dict, List, DefaultDict, Optional
-from collections import defaultdict
 
 # TODO:
 #
@@ -14,7 +13,8 @@ def norm_vectors(vs: np.array) -> np.array:
     """
     means = np.mean(vs, axis=0)
     stds = np.std(vs, axis=0)
-    return (vs - means) / stds
+    res = (vs - means) / stds
+    return np.nan_to_num(res)
 
 
 def array_to_int(v: np.array) -> int:
@@ -64,25 +64,39 @@ class RSPHash:
 
 class LSHashMap:
     _rsp: RSPHash
-    _bins: Dict[int, List[int]]
+    bins: Dict[int, List[int]]
 
-    def __init__(self, dim: int, width: int):
+    def __init__(self, vects: np.array, width: int = 16):
+        dim = vects.shape[1]
         self._rsp = RSPHash(dim=dim, width=width)
-        self._bins = {}
+        self.vects = vects
 
-    def build(self, vs: np.array) -> None:
-        hashes = self._rsp.batch_hash(vs)
+        hashes = self._rsp.batch_hash(self.vects)
         df = pd.DataFrame({"idx": np.arange(len(hashes)), "hashes": hashes})
-        self._bins = df.groupby("hashes").apply(lambda x: list(x["idx"])).to_dict()
+        self.bins = df.groupby("hashes").apply(lambda x: list(x["idx"])).to_dict()
 
     def __getitem__(self, key: int) -> List[int]:
-        return self._bins[key]
+        # maybe should swap this with `get_bucket`?
+        return self.bins[key]
 
     def items(self):
-        return self._bins.items()
+        return self.bins.items()
 
     def keys(self):
-        return self._bins.keys()
+        return self.bins.keys()
 
     def values(self):
-        return self._bins.values()
+        return self.bins.values()
+
+    def get_bucket_id(self, v: np.array) -> int:
+        """Get the bucket id for a given vector"""
+        return self._rsp.hash(v)
+
+    def get_neighbors(self, v: np.array, d: int = 0) -> List[int]:
+        """Get the neighbors in the buckets a hamming distance `d` away"""
+        b_id = self.get_bucket_id(v)
+        neighbors = []
+        for k in self.keys():
+            if hamming_dist(b_id, k) == d:
+                neighbors.extend(self[k])
+        return neighbors
