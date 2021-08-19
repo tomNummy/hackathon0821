@@ -6,8 +6,6 @@ import pandas as pd
 import numpy as np
 from dask.dataframe.hyperloglog import compute_hll_array, reduce_state, estimate_count
 
-import itertools
-
 
 class pattern_overlap:
     def __init__(
@@ -18,6 +16,7 @@ class pattern_overlap:
         LSHseed: int = 123456,
         mBloom: int = 0,
         kBloom: int = 0,
+        normalize_embeds: bool = True,
     ):
 
         self.BITS = BITS
@@ -34,7 +33,7 @@ class pattern_overlap:
         self.kBloom = kBloom
 
         # compute and store embeddings (also store hll embeddings for later)
-        self.embs, self.hlls = self.embeds()
+        self.embs, self.hlls = self.embeds(normalize_embeds)
 
         # compute distance between embeddings using lsh
         self.lsh = LSHashMap(self.embs, width=LSHwidth, seed=LSHseed)
@@ -63,13 +62,23 @@ class pattern_overlap:
 
         for i in range(self.NPats):
 
-            # neighbors = []
-            # for d in range(max_ham_distance):
-            #     neighbors.extend(self.lsh.get_neighbors(self.embs[i, :], d))
+            neighbors = self.lsh.get_neighbors(self.embs[i, :])
+            neighbors2 = []
+            for d in range(1, max_ham_distance + 1):
+                # tmp = self.lsh.get_neighbors(self.embs[i, :], d)
 
-            # neighbor_sets.add(tuple(neighbors))
+                neighbor_d = self.lsh.get_neighbors(self.embs[i, :], d)
+                neighbors.extend(neighbor_d)
+                if neighbor_d:
+                    neighbors2.append(neighbor_d)
 
-            neighbors = self.lsh.bins[self.lsh.get_bucket_id(self.embs[i])]
+            # print(neighbors)
+            # breakpoint()
+
+            neighbors.sort()
+            neighbor_sets.add(tuple(neighbors))
+
+            # neighbors = self.lsh.bins[self.lsh.get_bucket_id(self.embs[i])]
             for j in neighbors:
                 if j > i:
 
@@ -82,8 +91,8 @@ class pattern_overlap:
                     )
                 elif i > j:
                     overlaps[i, j] = overlaps[j, i]
-                else:
-                    overlaps[i, j] = len(self.patterns[i])
 
-        return overlaps
+            overlaps[i, i] = len(self.patterns[i])
+
+        return overlaps, neighbor_sets
 

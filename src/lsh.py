@@ -11,6 +11,7 @@ def norm_vectors(vs: np.array) -> np.array:
 
     Each vector is along the 0 dim
     """
+
     means = np.mean(vs, axis=0)
     stds = np.std(vs, axis=0)
     res = (vs - means) / stds
@@ -53,7 +54,7 @@ class RSPHash:
         if rsps:
             self._hashers = np.array(rsps)
         elif dim and width:
-            self._hashers = np.array([RSP(dim, seed=seed) for _ in range(width)])
+            self._hashers = np.array([RSP(dim, seed=seed + i) for i in range(width)])
         else:
             raise ValueError()
 
