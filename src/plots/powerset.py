@@ -1,11 +1,11 @@
 from ..lsh import norm_vectors
 from ..bloom_count import bloom
+from .utils import umap_embed
 
 import numpy as np
 import pandas as pd
 import itertools
-import umap
-from typing import List, Any
+from typing import List
 
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.plotting import Figure, figure
@@ -17,20 +17,6 @@ def embed(s: pd.Series, bits: int = 8) -> np.array:
     #     hll_embeds = compute_hll_array(s, bits)
     cms_embeds = bloom(s, 2 ** (bits - 3), 2 ** 3)
     return cms_embeds
-
-
-def umap_embed(
-    embeds: np.array,
-    n_neighbors: int = 5,
-    umap_kwargs: Any = None,
-) -> pd.DataFrame:
-
-    umap_kwargs = umap_kwargs if umap_kwargs else {}
-    reducer = umap.UMAP(n_neighbors=n_neighbors, **umap_kwargs)
-    embedding = reducer.fit_transform(np.nan_to_num(embeds))
-
-    epts = pd.DataFrame(embedding, columns=["u_x", "u_y"])
-    return epts
 
 
 def make_powerset(n: int) -> List[List[int]]:
@@ -52,11 +38,6 @@ def make_powerset_patterns(n: int, bits: int = 3) -> pd.DataFrame:
 
 
 def make_bokeh_figure(umbeds: pd.DataFrame) -> Figure:
-    # formatting df for bokeh
-    # rename index to uid
-    #     results = umbeds.reset_index()
-    #     results = results.rename(columns={"index": "uid"})
-
     datasource = ColumnDataSource(umbeds)
 
     plot_figure = figure(
