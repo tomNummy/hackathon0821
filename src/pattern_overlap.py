@@ -11,12 +11,27 @@ import itertools
 
 class pattern_overlap:
     def __init__(
-        self, patterns, BITS: int = 8, LSHwidth: int = 16, LSHseed: int = 123456
+        self,
+        patterns,
+        BITS: int = 8,
+        LSHwidth: int = 16,
+        LSHseed: int = 123456,
+        mBloom: int = 0,
+        kBloom: int = 0,
     ):
 
         self.BITS = BITS
         self.patterns = patterns
         self.NPats = len(patterns)
+
+        if mBloom == 0:
+            mBloom = 2 ** (self.BITS - 3)
+
+        if kBloom == 0:
+            kBloom = 2 ** 3
+
+        self.mBloom = mBloom
+        self.kBloom = kBloom
 
         # compute and store embeddings (also store hll embeddings for later)
         self.embs, self.hlls = self.embeds()
@@ -26,14 +41,18 @@ class pattern_overlap:
 
         return
 
-    def embeds(self) -> np.array:
+    def embeds(self, normalize_embeds: bool = True) -> np.array:
 
         hll_embeds = [compute_hll_array(s, self.BITS) for s in self.patterns]
-        cms_embeds = [bloom(s, 2 ** (self.BITS - 3), 2 ** 3) for s in self.patterns]
+        cms_embeds = [bloom(s, self.mBloom, self.kBloom) for s in self.patterns]
 
         concat_embeds = norm_vectors(
             np.asarray([np.concatenate([h, c]) for h, c in zip(hll_embeds, cms_embeds)])
         )
+
+        if normalize_embeds:
+            embed_norm = np.sqrt(np.sum(concat_embeds ** 2, axis=1))
+            concat_embeds = concat_embeds / embed_norm[:, None]
 
         return concat_embeds, np.asarray(hll_embeds)
 
@@ -44,12 +63,13 @@ class pattern_overlap:
 
         for i in range(self.NPats):
 
-            neighbors = []
-            for d in range(max_ham_distance):
-                neighbors.extend(self.lsh.get_neighbors(self.embs[i, :], d))
+            # neighbors = []
+            # for d in range(max_ham_distance):
+            #     neighbors.extend(self.lsh.get_neighbors(self.embs[i, :], d))
 
-            neighbor_sets.add(tuple(neighbors))
+            # neighbor_sets.add(tuple(neighbors))
 
+            neighbors = self.lsh.bins[self.lsh.get_bucket_id(self.embs[i])]
             for j in neighbors:
                 if j > i:
 
@@ -65,5 +85,5 @@ class pattern_overlap:
                 else:
                     overlaps[i, j] = len(self.patterns[i])
 
-        return overlaps, neighbor_sets
+        return overlaps
 
