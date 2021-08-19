@@ -1,4 +1,3 @@
-# from src.pandas_pattern_generator import PandasPatternGenerator
 from src.lsh import LSHashMap, hamming_dist, norm_vectors
 from src.bloom_count import bloom
 
@@ -7,7 +6,7 @@ import numpy as np
 from dask.dataframe.hyperloglog import compute_hll_array, reduce_state, estimate_count
 
 
-class pattern_overlap:
+class PatternOverlap:
     def __init__(
         self,
         patterns,
@@ -65,25 +64,21 @@ class pattern_overlap:
             neighbors = self.lsh.get_neighbors(self.embs[i, :])
             neighbors2 = []
             for d in range(1, max_ham_distance + 1):
-                # tmp = self.lsh.get_neighbors(self.embs[i, :], d)
 
                 neighbor_d = self.lsh.get_neighbors(self.embs[i, :], d)
                 neighbors.extend(neighbor_d)
                 if neighbor_d:
                     neighbors2.append(neighbor_d)
 
-            # print(neighbors)
-            # breakpoint()
-
             neighbors.sort()
             neighbor_sets.add(tuple(neighbors))
 
-            # neighbors = self.lsh.bins[self.lsh.get_bucket_id(self.embs[i])]
             for j in neighbors:
                 if j > i:
 
                     hll_union = reduce_state(
-                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))), self.BITS,
+                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))),
+                        self.BITS,
                     )
                     union_size = estimate_count(hll_union, self.BITS)
                     overlaps[i, j] = (
@@ -95,4 +90,3 @@ class pattern_overlap:
             overlaps[i, i] = len(self.patterns[i])
 
         return overlaps, neighbor_sets
-
