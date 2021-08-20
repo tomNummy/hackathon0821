@@ -38,11 +38,6 @@ def make_powerset_patterns(n: int, bits: int = 3) -> pd.DataFrame:
     embeds = po.embs
     overlaps, neighbor_sets = po.get_overlaps(max_ham_distance=10)
 
-    # embeds = np.asarray([embed(x, bits) for x in sets])
-    # embeds = norm_vectors(embeds)
-
-    print(overlaps)
-
     G = nx.convert_matrix.from_numpy_matrix(overlaps)
 
     umbeds = umap_embed(embeds, n_neighbors=20)
