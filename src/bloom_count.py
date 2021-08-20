@@ -15,10 +15,10 @@ def bloom(s: pd.Series, m: int, k: int = 0) -> np.array:
     bc = np.zeros((k, m), dtype=int)
 
     """
-    one hash function which can acts as many hash functions as required by changing seed
+    hash function that changes with h
     """
 
-    def hashing(s, h):  # hash function
+    def hashing(s: pd.Series, h: int):
         hstring = str(h)
         hashkey = "0" * (16 - len(hstring)) + hstring
         hash = (
@@ -29,10 +29,6 @@ def bloom(s: pd.Series, m: int, k: int = 0) -> np.array:
         )
 
         return hash
-
-    """
-    function to insert an element into the array list and updating the bloom filter accordingly
-    """
 
     for j in range(k):  # iterate through k different hash functions
 

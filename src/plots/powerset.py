@@ -1,22 +1,25 @@
 from ..lsh import norm_vectors
 from ..bloom_count import bloom
 from .utils import umap_embed
+from ..pattern_overlap import PatternOverlap
 
 import numpy as np
 import pandas as pd
 import itertools
 from typing import List
-
-from bokeh.models import ColumnDataSource, HoverTool
-from bokeh.plotting import Figure, figure
+import networkx as nx
 
 
-def embed(s: pd.Series, bits: int = 8) -> np.array:
-    # drop dask hll so we can go down to low bits
-    # for the powerset example
-    #     hll_embeds = compute_hll_array(s, bits)
-    cms_embeds = bloom(s, 2 ** (bits - 3), 2 ** 3)
-    return cms_embeds
+from bokeh.models import ColumnDataSource, HoverTool, StaticLayoutProvider
+from bokeh.plotting import Figure, figure, from_networkx
+
+
+# def embed(s: pd.Series, bits: int = 8) -> np.array:
+#     # drop dask hll so we can go down to low bits
+#     # for the powerset example
+#     #     hll_embeds = compute_hll_array(s, bits)
+#     cms_embeds = bloom(s, 2 ** (bits - 3), 2 ** 3)
+#     return cms_embeds
 
 
 def make_powerset(n: int) -> List[List[int]]:
@@ -29,15 +32,20 @@ def make_powerset(n: int) -> List[List[int]]:
 
 def make_powerset_patterns(n: int, bits: int = 3) -> pd.DataFrame:
     sets = make_powerset(n)
-    embeds = np.asarray([embed(x, bits) for x in sets])
-    embeds = norm_vectors(embeds)
 
-    umbeds = umap_embed(embeds, n_neighbors=20)
+    po = PatternOverlap(np.asarray(sets))
+
+    embeds = po.embs
+    overlaps, neighbor_sets = po.get_overlaps(max_ham_distance=32)
+
+    G = nx.convert_matrix.from_numpy_matrix(overlaps)
+
+    umbeds = umap_embed(embeds, n_neighbors=20, umap_kwargs={"random_state": 123})
     umbeds["set"] = [list(x) for x in sets]
-    return umbeds
+    return umbeds, G
 
 
-def make_bokeh_figure(umbeds: pd.DataFrame) -> Figure:
+def make_bokeh_figure(umbeds: pd.DataFrame, G=None) -> Figure:
     datasource = ColumnDataSource(umbeds)
 
     plot_figure = figure(
@@ -63,12 +71,19 @@ def make_bokeh_figure(umbeds: pd.DataFrame) -> Figure:
     )
 
     plot_figure.circle(
-        "u_x",
-        "u_y",
-        source=datasource,
-        line_alpha=0.6,
-        fill_alpha=0.6,
-        size=12,
+        "u_x", "u_y", source=datasource, line_alpha=0.6, fill_alpha=0.6, size=12,
     )
+
+    if G:
+
+        graph_renderer = from_networkx(G, nx.spring_layout)
+
+        fixed_layout = {
+            index: [row["u_x"], row["u_y"]] for index, row in umbeds.iterrows()
+        }
+        fixed_layout_provider = StaticLayoutProvider(graph_layout=fixed_layout)
+        graph_renderer.layout_provider = fixed_layout_provider
+
+        plot_figure.renderers.append(graph_renderer)
 
     return plot_figure
