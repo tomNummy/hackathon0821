@@ -14,14 +14,6 @@ from bokeh.models import ColumnDataSource, HoverTool, StaticLayoutProvider
 from bokeh.plotting import Figure, figure, from_networkx
 
 
-# def embed(s: pd.Series, bits: int = 8) -> np.array:
-#     # drop dask hll so we can go down to low bits
-#     # for the powerset example
-#     #     hll_embeds = compute_hll_array(s, bits)
-#     cms_embeds = bloom(s, 2 ** (bits - 3), 2 ** 3)
-#     return cms_embeds
-
-
 def make_powerset(n: int) -> List[List[int]]:
     powerset = []
     for size in range(n + 1):
@@ -71,7 +63,12 @@ def make_bokeh_figure(umbeds: pd.DataFrame, G=None) -> Figure:
     )
 
     plot_figure.circle(
-        "u_x", "u_y", source=datasource, line_alpha=0.6, fill_alpha=0.6, size=12,
+        "u_x",
+        "u_y",
+        source=datasource,
+        line_alpha=0.6,
+        fill_alpha=0.6,
+        size=12,
     )
 
     if G:
