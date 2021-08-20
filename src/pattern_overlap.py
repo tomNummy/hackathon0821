@@ -1,7 +1,6 @@
 from src.lsh import LSHashMap, hamming_dist, norm_vectors
 from src.bloom_count import bloom
 
-import pandas as pd
 import numpy as np
 from dask.dataframe.hyperloglog import compute_hll_array, reduce_state, estimate_count
 
@@ -52,6 +51,8 @@ class PatternOverlap:
             embed_norm = np.sqrt(np.sum(concat_embeds ** 2, axis=1))
             concat_embeds = concat_embeds / embed_norm[:, None]
 
+        breakpoint()
+
         return concat_embeds, np.asarray(hll_embeds)
 
     def get_overlaps(self, max_ham_distance: int = 0):
@@ -62,13 +63,9 @@ class PatternOverlap:
         for i in range(self.NPats):
 
             neighbors = self.lsh.get_neighbors(self.embs[i, :])
-            neighbors2 = []
             for d in range(1, max_ham_distance + 1):
 
-                neighbor_d = self.lsh.get_neighbors(self.embs[i, :], d)
-                neighbors.extend(neighbor_d)
-                if neighbor_d:
-                    neighbors2.append(neighbor_d)
+                neighbors.extend(self.lsh.get_neighbors(self.embs[i, :], d))
 
             neighbors.sort()
             neighbor_sets.add(tuple(neighbors))
@@ -77,8 +74,7 @@ class PatternOverlap:
                 if j > i:
 
                     hll_union = reduce_state(
-                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))),
-                        self.BITS,
+                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))), self.BITS,
                     )
                     union_size = estimate_count(hll_union, self.BITS)
                     overlaps[i, j] = (
