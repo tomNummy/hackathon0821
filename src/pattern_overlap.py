@@ -39,7 +39,9 @@ class PatternOverlap:
 
     def embeds(self, normalize_embeds: bool = True) -> np.array:
 
-        hll_embeds = [compute_hll_array(s, self.BITS) for s in self.patterns]
+        hll_embeds = [
+            compute_hll_array(s.astype(str), self.BITS) for s in self.patterns
+        ]
         cms_embeds = [bloom(s, self.mBloom, self.kBloom) for s in self.patterns]
 
         concat_embeds = norm_vectors(
@@ -75,8 +77,7 @@ class PatternOverlap:
                 if j > i:
 
                     hll_union = reduce_state(
-                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))),
-                        self.BITS,
+                        np.concatenate(((self.hlls[i, :], self.hlls[j, :]))), self.BITS,
                     )
                     union_size = estimate_count(hll_union, self.BITS)
                     overlaps[i, j] = (
