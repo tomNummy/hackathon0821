@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
+import itertools
 from typing import Any, Dict, List, DefaultDict, Optional
-
-# TODO:
-#
 
 
 def norm_vectors(vs: np.array) -> np.array:
@@ -105,3 +103,12 @@ class LSHashMap:
             if hamming_dist(b_id, k) == d:
                 neighbors.extend(self[k])
         return neighbors
+
+    def key_distances(self):
+        h_dists = np.asarray(
+            [hamming_dist(x, y) for x, y in itertools.product(self.keys(), repeat=2)]
+        )
+        return h_dists.reshape(len(self.bins), len(self.bins))
+
+    def histogram(self, bins: str = "auto"):
+        return np.histogram(np.array([len(x) for x in self.values()]), bins=bins)

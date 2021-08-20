@@ -37,8 +37,6 @@ class PatternOverlap:
         # compute distance between embeddings using lsh
         self.lsh = LSHashMap(self.embs, width=LSHwidth, seed=LSHseed)
 
-        return
-
     def embeds(self, normalize_embeds: bool = True) -> np.array:
 
         hll_embeds = [compute_hll_array(s, self.BITS) for s in self.patterns]
