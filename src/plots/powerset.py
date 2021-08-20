@@ -36,11 +36,11 @@ def make_powerset_patterns(n: int, bits: int = 3) -> pd.DataFrame:
     po = PatternOverlap(np.asarray(sets))
 
     embeds = po.embs
-    overlaps, neighbor_sets = po.get_overlaps(max_ham_distance=10)
+    overlaps, neighbor_sets = po.get_overlaps(max_ham_distance=32)
 
     G = nx.convert_matrix.from_numpy_matrix(overlaps)
 
-    umbeds = umap_embed(embeds, n_neighbors=20)
+    umbeds = umap_embed(embeds, n_neighbors=20, umap_kwargs={"random_state": 123})
     umbeds["set"] = [list(x) for x in sets]
     return umbeds, G
 
@@ -78,7 +78,6 @@ def make_bokeh_figure(umbeds: pd.DataFrame, G=None) -> Figure:
 
         graph_renderer = from_networkx(G, nx.spring_layout)
 
-        # fixed_layout = {i: [u.ux, u.uy] for
         fixed_layout = {
             index: [row["u_x"], row["u_y"]] for index, row in umbeds.iterrows()
         }

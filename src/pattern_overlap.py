@@ -55,7 +55,7 @@ class PatternOverlap:
 
     def get_overlaps(self, max_ham_distance: int = 0):
 
-        overlaps = np.zeros((self.NPats, self.NPats), dtype=int)
+        overlaps = np.zeros((self.NPats, self.NPats), dtype=float)
         neighbor_sets = set()
 
         for i in range(self.NPats):
@@ -78,9 +78,12 @@ class PatternOverlap:
                     overlaps[i, j] = (
                         len(self.patterns[i]) + len(self.patterns[j]) - union_size
                     )
+
                 elif i > j:
                     overlaps[i, j] = overlaps[j, i]
 
             overlaps[i, i] = len(self.patterns[i])
+
+            overlaps[overlaps < 1e-2] = 0
 
         return overlaps, neighbor_sets
