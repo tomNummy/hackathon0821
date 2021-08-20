@@ -54,7 +54,6 @@ class PatternOverlap:
             embed_norm = np.sqrt(np.sum(concat_embeds ** 2, axis=1))
             concat_embeds = concat_embeds / embed_norm[:, None]
 
-        breakpoint()
         return concat_embeds, np.asarray(hll_embeds)
 
     def get_overlaps(self, max_ham_distance: int = 0):
